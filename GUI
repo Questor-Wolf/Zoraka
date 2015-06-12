@@ -1,23 +1,4 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Label;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableModel;
 
 public class GUI {
 	
@@ -26,8 +7,7 @@ public class GUI {
 	
 	private static Entity[] tempE;
 	private static JTextPane history;
-	private static int index;
-	public static JFrame map;
+	public static JFrame mapWindow;
 	JFrame frmWelcome;
 	static JFrame charCreate;
 	public static JFrame game;
@@ -45,7 +25,7 @@ public class GUI {
 	private static JSlider slider;
 	public static JComboBox<Item> Weapons;
 	public static JComboBox<Entity> Enemies;
-	private JComboBox<Item> Food;
+	private static JComboBox<Food> Food;
 
 	public GUI(int rows, int cols) {
 		Splash();
@@ -190,7 +170,15 @@ public class GUI {
 		
 		model = new DefaultTableModel(data, Cols);
 		
-
+		for (int i = 0; i < Engine.map.length; i++) {
+			for (int j = 0; j < Engine.map.length; j++) {
+				if ((Engine.map[i][j]).getType().equalsIgnoreCase("quest")) {
+					model.setValueAt((Object)"  ∆",i ,j );
+				} else if ((Engine.map[i][j]).getType().equalsIgnoreCase("tower")){
+					model.setValueAt((Object)"  ç",i ,j );
+				}
+			}
+		}
 		
 
 		
@@ -203,26 +191,28 @@ public class GUI {
 		table.setCellSelectionEnabled(false);
 		charCreate.setVisible(false);
 
-		table.setValueAt((Object)"•",Hero.getCurrentR(),Hero.getCurrentC());
+		table.setValueAt((Object)"  •",Hero.getCurrentR(),Hero.getCurrentC());
 		
-		map = new JFrame();
-		map.setTitle("MAP");
-		map.setBounds(100, 100, (cols * 25), (rows * 25));
-	    table.setRowHeight((map.getHeight() / rows));
-	    map.setBounds(100, 100, (cols * 25), (map.getHeight() + table.getRowHeight() + 100));
+		mapWindow = new JFrame();
+		mapWindow.setTitle("mapWindow");
+		mapWindow.setBounds(100, 100, (cols * 25), (rows * 25));
+	    table.setRowHeight((mapWindow.getHeight() / rows));
+	    mapWindow.setBounds(100, 100, (cols * 25), (mapWindow.getHeight() + table.getRowHeight() + 100));
 	    
 	    JTextField legend = new JTextField("X = Discovered \n • = Player \n ∆ = Quest");
-	    legend.setBounds(map.getHeight() - 20, 0, 30, 10);
-	    map.getContentPane().add(legend, BorderLayout.SOUTH);
+	    legend.setBounds(mapWindow.getHeight() - 20, 0, 30, 10);
+	    mapWindow.getContentPane().add(legend, BorderLayout.SOUTH);
 
 		System.out.println(table.getRowCount());
-		map.setLocation((dim.width/2-map.getSize().width/2) + 250, dim.height/2-map.getSize().height/2);
+		mapWindow.setLocation((dim.width/2-mapWindow.getSize().width/2) + 250, dim.height/2-mapWindow.getSize().height/2);
 		
-		map.setVisible(true);
+
+		mapWindow.setResizable(false);
+		mapWindow.setVisible(true);
 		
+
 		
-		
-		map.getContentPane().add(table, BorderLayout.CENTER);
+		mapWindow.getContentPane().add(table, BorderLayout.CENTER);
 		
 		
 		
@@ -241,7 +231,7 @@ public class GUI {
 		
 		history = new JTextPane();
 		history.setEditable(false);
-		history.setBounds(95, 43, 184, 232);
+		history.setBounds(2, 2, 180, 37);
 		game.getContentPane().add(history);
 
 		JScrollPane scroll = new JScrollPane(history);
@@ -273,7 +263,7 @@ public class GUI {
 		for (int i = 0; i < tempW.length; i++) {
 			if (tempW[i] != null
 					&& tempW[i].getType().equalsIgnoreCase("weapon")) {
-				Weapons.addItem(tempW[i]);
+				Weapons.addItem((Weapon)tempW[i]);
 			}
 		}
 		Enemies = new JComboBox<Entity>();
@@ -289,14 +279,14 @@ public class GUI {
 				Enemies.addItem(tempE[i]);
 			}
 		}
-		Food = new JComboBox<Item>();
+		Food = new JComboBox<Food>();
 		Food.setToolTipText("Name - Heal Value");
 		Food.setBounds(6, 180, 100, 20);
 		game.getContentPane().add(Food);
 		Item[] tempF = Hero.getInventory();
 		for (int i = 0; i < tempF.length; i++) {
 			if (tempF[i] != null && tempF[i].getType().equalsIgnoreCase("food")) {
-				Food.addItem(tempF[i]);
+				Food.addItem((Food)tempF[i]);
 			}
 		}
 	}
@@ -330,12 +320,18 @@ public class GUI {
 			
 			Hero.setDamage(Hero.bs + (((Weapon) (Weapons.getSelectedItem())).getDamage()));
 			
+			
+			
 			if (result.equalsIgnoreCase("attack")) {
 				if ((((Integer)tempE[Enemies.getSelectedIndex()].getHealth() <= 0))) {
 					tempE[Enemies.getSelectedIndex()] = null;
+					
 				} else {
-				((Entity) Enemies.getSelectedItem()).setHealth(((Entity) Enemies.getSelectedItem()).getHealth() - Hero.getDamage());
+					((Entity) Enemies.getSelectedItem()).setHealth(((Entity) Enemies.getSelectedItem()).getHealth() - Hero.getDamage());
 				}
+			} else if (result.equalsIgnoreCase("heal")) {
+				System.out.println(Hero.getHealth());
+				System.out.println(Food.getSelectedItem());
 			}
 
 			curr = history.getText();
@@ -347,7 +343,7 @@ public class GUI {
 			textField.setText(null);
 			
 
-			table.setValueAt((Object)"•",Hero.getCurrentR(),Hero.getCurrentC());
+			table.setValueAt((Object)"  •",Hero.getCurrentR(),Hero.getCurrentC());
 			
 		}
 
